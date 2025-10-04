@@ -46,7 +46,7 @@ A full-stack TODO List web application designed to help users manage their daily
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/TensoRag/TODO-List.git
+   git clone https://github.com/DCode-v05/TODO-List.git
    cd TODO-List
    ```
 
@@ -137,5 +137,5 @@ Contributions are welcome! To contribute:
 ---
 
 ## Contact
-- **GitHub:** [TensoRag](https://github.com/TensoRag)
+- **GitHub:** [DCode-v05](https://github.com/DCode-v05)
 - **Email:** denistanb05@gmail.com
