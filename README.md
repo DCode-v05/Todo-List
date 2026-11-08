@@ -1,72 +1,192 @@
 # Todo-List
 
-A MERN to-do app. React frontend, Express and Mongoose API, MongoDB storage. You can add, edit, complete, delete, search and filter tasks. I started it at a GDG workshop and kept adding to it.
+**A full-stack MERN to-do app — add, search, edit, complete, and delete tasks, all backed by a MongoDB REST API.**
 
-## How it works
+![React](https://img.shields.io/badge/React_19-61DAFB?style=flat&logo=react&logoColor=black) ![Vite](https://img.shields.io/badge/Vite_6-646CFF?style=flat&logo=vite&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=flat&logo=tailwindcss&logoColor=white) ![MUI](https://img.shields.io/badge/MUI_7-007FFF?style=flat&logo=mui&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white) ![Express](https://img.shields.io/badge/Express_5-000000?style=flat&logo=express&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white) ![Mongoose](https://img.shields.io/badge/Mongoose_8-880000?style=flat&logo=mongoose&logoColor=white) ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=flat&logo=axios&logoColor=white)
 
-The repo holds two apps. The Vite and React frontend is at the root (`src/`), and the Express API is in `api/`. In development they run on ports 5173 and 5000, and Vite proxies `/api` to the API.
+## Overview
 
-**Frontend.** `App.jsx` holds the state (`search`, `tasks`, `isLoading`) and the create, complete, edit and delete handlers. Each handler calls the API, then updates the local list without refetching. Components:
+A to-do app built on the MERN stack: a React frontend talking to an Express and MongoDB REST API. You type a task, it gets stored in MongoDB, and the list updates on screen. You can mark tasks done, edit them inline, filter by status, search by keyword and delete what you no longer need.
 
-- `Search.jsx`: search box and the add-task form
-- `TaskPage.jsx`: All / Completed / Incomplete filter and the list, newest first
-- `TaskItem.jsx`: one row with checkbox, status icon, edit and delete buttons
-- `EditTask.jsx`: inline edit form
+I built it to get hands-on with the full MERN flow: wiring a React UI to a REST backend, modelling data in Mongoose, and handling the request/response cycle on both sides. It started at a GDG workshop and I kept extending it afterward. It's a learning project, not a deployed product, but the CRUD path is complete. The frontend and backend are separate, the API uses an MVC-style layout, and requests go through a shared Axios client.
 
-`src/axios.js` creates the Axios instance with `baseURL: '/api/todos/'`. Styling is Tailwind CSS 4 through `@tailwindcss/vite`, with MUI icons.
+## Key Features
 
-**API.** `api/server.js` loads env vars, exits if `MONGO_URI` is missing, connects to MongoDB, sets up CORS for `localhost:5173` and one Codespaces URL, and mounts the router. The Todo schema is `description` (required string) and `completed` (boolean, default false).
+- **Add tasks** through a single input and an "Add Task" button. Empty or whitespace-only input is rejected on the client before it reaches the API.
+- **Inline editing**: each task has an edit icon that swaps the row into a text field and saves on submit (MUI `EditIcon`).
+- **Mark complete / incomplete** with a checkbox. Completed tasks show a green check, open tasks a red cross, and the state is saved to the database.
+- **Delete tasks** with a one-click trash button (MUI `DeleteIcon`).
+- **Keyword search** that filters the list as you type, case-insensitive, matched against the task description.
+- **Status filter** with All / Completed / Incomplete toggle buttons, applied on top of the search filter.
+- **Newest-first ordering**: the list is reversed on render so the task you just added shows at the top.
+- **Loading state** while the initial fetch is in flight, and a "No tasks available" message when there is nothing to show.
+- **REST API** with full CRUD over `/api/todos`, returning HTTP status codes 200, 201, 400, 404 and 500.
+- **Persistent storage** in MongoDB via Mongoose, with schema-level validation on the task description.
+- **CORS** configured for specific frontend origins, plus a Vite dev proxy so the frontend and API can run on separate ports during development.
 
-| Method | Route | Action |
-| --- | --- | --- |
-| GET | `/api/todos/` | list all |
-| POST | `/api/todos/` | create from `{ description }` |
-| PUT | `/api/todos/:id` | update description and/or completed |
-| DELETE | `/api/todos/:id` | delete |
+## How It Works
 
-PUT and DELETE check the id with `mongoose.isValidObjectId` and return 404 when nothing matches.
+The project is two separate apps in one repo: a Vite/React frontend at the root (`src/`) and an Express API under `api/`. In development they run on different ports (5173 and 5000) and Vite proxies API calls across.
 
-## Setup
+### Frontend (React + Vite)
 
-You need Node and a MongoDB instance (local or Atlas).
+`App.jsx` holds the state and owns every mutation. The state is `search`, `tasks` and `isLoading`:
 
-```bash
-npm install
-cd api && npm install
+- On mount, a `useEffect` calls `fetchTodo()` and loads the task list into state.
+- `submitTask`, `completeTask`, `deleteTask` and `editTask` each call the API and then update local state by mapping or filtering the `tasks` array, so the UI changes immediately without a refetch.
+- `completeTask` flips the `completed` boolean and PUTs the whole task back. `editTask` PUTs only the new `description`.
+
+The UI is split into small components:
+
+- **`Search.jsx`**: the search box (it lifts the query up via `setSearch`) and the add-task form. It keeps its own input state and clears the field after a task is added.
+- **`TaskPage.jsx`**: the All / Completed / Incomplete filter toggle (with `useMemo` for the filtered slice) and the task rows, reversed so the newest is on top.
+- **`TaskItem.jsx`**: one task row with the checkbox, status icon, description, and the edit and delete controls.
+- **`EditTask.jsx`**: switches a row between display and an inline edit form.
+
+Styling is Tailwind CSS 4 through the official `@tailwindcss/vite` plugin (no separate `tailwind.config` or PostCSS step), with MUI icons for the edit and delete actions. There is a gradient header, focus rings and hover transitions.
+
+API access goes through a single Axios instance in `src/axios.js` with `baseURL: '/api/todos/'`. The relative base is what makes the Vite proxy work: calls go to the dev server, which forwards `/api` to `http://localhost:5000`.
+
+### Backend (Express + Mongoose)
+
+`api/server.js` is the entry point. It loads env vars with dotenv, exits if `MONGO_URI` is missing, connects to MongoDB (`config/db.js`), enables JSON and urlencoded body parsing, sets up CORS for `localhost:5173` and one Codespaces URL, mounts the todo router, and adds a catch-all error handler that returns a 500.
+
+The data model (`models/todoModels.js`) is small on purpose:
+
+```js
+{
+  description: { type: String, required: true },
+  completed:   { type: Boolean, default: false }
+}
 ```
 
-Create `api/.env`:
+The router (`views/todoRoutes.js`) exposes the CRUD endpoints under `/api/todos`:
+
+| Method | Route   | Action                                  |
+|--------|---------|-----------------------------------------|
+| GET    | `/`     | List all todos                          |
+| POST   | `/`     | Create a todo from `{ description }`    |
+| PUT    | `/:id`  | Update description and/or completed flag |
+| DELETE | `/:id`  | Delete a todo by id                     |
+
+The PUT and DELETE handlers check the `:id` with `mongoose.isValidObjectId` before touching the database and return 404 when no document matches. Updates use `findByIdAndUpdate` with `runValidators: true`, so the schema rules still apply on edit.
+
+> Note on layout: the repo follows an MVC-style folder split (`config` / `controllers` / `models` / `views`). The route handlers in `views/todoRoutes.js` are self-contained, so `controllers/todoController.js` is a parallel copy of the same CRUD logic that nothing imports. Worth knowing if you extend the API.
+
+### Request flow, end to end
+
+1. The user types a task and submits, and `Search` calls `submitTask` in `App`.
+2. `createTodo()` (Axios) POSTs `{ description }` to `/api/todos/`.
+3. Vite proxies it to the Express server on port 5000.
+4. The router builds a `Todo`, saves it and returns the created document (201).
+5. `App` appends the returned task to state and the row appears at the top of the list.
+
+## Tech Stack
+
+- **Languages:** JavaScript (ES6+ / JSX), HTML5, CSS3
+- **Frontend:** React 19, Vite 6, Tailwind CSS 4 (`@tailwindcss/vite`), MUI 7 (`@mui/material`, `@mui/icons-material`, Emotion), Axios
+- **Backend:** Node.js, Express 5, Mongoose 8, MongoDB driver, dotenv, cors, nodemon
+- **Tooling:** ESLint 9 (with `eslint-plugin-react-hooks` and `react-refresh`), Vite dev server + proxy
+
+## Getting Started
+
+### Prerequisites
+- Node.js and npm
+- A MongoDB instance (local `mongod` or a MongoDB Atlas connection string)
+
+### Installation
+
+```bash
+git clone https://github.com/DCode-v05/Todo-List.git
+cd Todo-List
+
+# Backend
+cd api
+npm install
+
+# Frontend
+cd ..
+npm install
+```
+
+Create a `.env` file in the `api/` folder. It is git-ignored, so it is not in the repo:
 
 ```env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 ```
 
-Run the API and the frontend in two terminals:
+### Running
+
+Start the API first, then the frontend:
 
 ```bash
-cd api && npm run dev     # nodemon server.js, http://localhost:5000
-npm run dev               # vite, http://localhost:5173
+# Terminal 1 — backend (from api/)
+cd api
+npm run dev        # nodemon server.js → http://localhost:5000
+
+# Terminal 2 — frontend (from repo root)
+npm run dev        # vite → http://localhost:5173
 ```
 
-## Project structure
+Open `http://localhost:5173` in your browser. The Vite proxy forwards `/api` calls to the backend, so you don't need to touch CORS for local use.
+
+> Heads-up: `api/server.js` loads its `.env` from a hardcoded path (`/workspaces/TODO/api/.env`), and the root `package.json` `start` script points at `/workspaces/TODO-MERN/api/server.js`. Both are left over from a GitHub Codespaces setup. To run this locally, change `dotenv.config({ path: ... })` to plain `dotenv.config()` (or point it at your own `api/.env`) and use `npm run dev` instead of `npm start`. Also note that `server.js` logs `MONGO_URI` to the console on startup.
+
+## Usage
+
+- **Add a task:** type into "Add a new task" and hit Add Task (or Enter).
+- **Search:** type in the search box to filter the list by description as you go.
+- **Filter by status:** use the All / Completed / Incomplete toggle.
+- **Complete a task:** click its checkbox. The icon flips to a green check and the change is saved.
+- **Edit a task:** click the edit (pencil) icon, change the text and submit.
+- **Delete a task:** click the trash icon.
+
+Every change is sent to the API and stored in MongoDB, so the list survives a page reload.
+
+## Project Structure
 
 ```
-api/
-  config/db.js                 Mongoose connection
-  controllers/todoController.js
-  models/todoModels.js         Todo schema
-  views/todoRoutes.js          /api/todos routes
-  server.js
-src/
-  components/                  Search, TaskPage, TaskItem, EditTask
-  App.jsx, axios.js, main.jsx
-vite.config.js                 React and Tailwind plugins, /api proxy
+Todo-List/
+├── api/                          # Express + Mongoose backend
+│   ├── config/
+│   │   └── db.js                 # Mongoose connection helper
+│   ├── controllers/
+│   │   └── todoController.js     # CRUD handlers (parallel copy; routes use inline versions)
+│   ├── models/
+│   │   └── todoModels.js         # Todo schema: description + completed
+│   ├── views/
+│   │   └── todoRoutes.js         # /api/todos routes (GET/POST/PUT/DELETE)
+│   ├── server.js                 # API entry point, CORS, error handler
+│   ├── package.json              # Backend deps (express, mongoose, cors, dotenv)
+│   └── package-lock.json
+├── src/                          # React frontend
+│   ├── components/
+│   │   ├── Search.jsx            # Search box + add-task form
+│   │   ├── TaskPage.jsx          # Status filter toggle + task list
+│   │   ├── TaskItem.jsx          # Single task row (checkbox, edit, delete)
+│   │   └── EditTask.jsx          # Inline edit form
+│   ├── App.jsx                   # State + all CRUD handlers
+│   ├── axios.js                  # Axios instance (baseURL /api/todos/)
+│   ├── App.css / index.css       # Styles
+│   └── main.jsx                  # React entry point
+├── index.html                    # Vite HTML template
+├── vite.config.js                # React + Tailwind plugins, /api dev proxy
+├── eslint.config.js              # ESLint flat config
+├── package.json                  # Frontend deps and scripts
+├── package-lock.json
+├── .gitignore                    # Ignores node_modules and .env
+└── README.md
 ```
 
-## Known issues
+---
 
-- `api/server.js` calls `dotenv.config({ path: '/workspaces/TODO/api/.env' })`, a Codespaces path. Outside Codespaces it does not find your `.env`; change it to `dotenv.config()`.
-- The root `npm start` script points at `/workspaces/TODO-MERN/api/server.js`. Use `npm run dev` in `api/` instead.
-- `server.js` logs `MONGO_URI` to the console on startup.
-- `api/controllers/todoController.js` is not imported anywhere. The routes in `views/todoRoutes.js` contain their own copy of the same logic.
+## Contact
+
+<table>
+  <tr><td><b>Portfolio:</b> <a href="https://www.denistan.me">Denistan</a></td><td><b>LinkedIn:</b> <a href="https://www.linkedin.com/in/denistanb">denistanb</a></td></tr>
+  <tr><td><b>GitHub:</b> <a href="https://github.com/DCode-v05">DCode-v05</a></td><td><b>LeetCode:</b> <a href="https://leetcode.com/u/Denistan_B">Denistan_B</a></td></tr>
+  <tr><td colspan="2" align="center"><b>Email:</b> <a href="mailto:denistanb05@gmail.com">denistanb05@gmail.com</a></td></tr>
+</table>
+
+Made with ❤️ by **Denistan B**
