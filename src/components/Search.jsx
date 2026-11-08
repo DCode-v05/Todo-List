@@ -13,7 +13,6 @@ const Search = ({ setSearch, submitTask }) => {
 
   return (
     <div className="p-6 max-w-md mx-auto bg-gray-100 rounded-xl shadow-lg flex flex-col items-center mb-6">
-      {/* Search Bar for Filtering Tasks */}
       <div className="mb-4 w-full relative">
         <input
           type="text"
@@ -49,7 +48,6 @@ const Search = ({ setSearch, submitTask }) => {
         )}
       </div>
 
-      {/* Form for Adding New Task */}
       <form onSubmit={handleAddTask} className="flex flex-col gap-3 w-full">
         <div className="relative">
           <input

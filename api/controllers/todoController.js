@@ -33,7 +33,7 @@ exports.updateTodo = async (req, res) => {
     const { description, completed } = req.body;
 
     const updates = {};
-    if (description !== undefined) updates.description = description; // Fixed typo: undefinded -> undefined
+    if (description !== undefined) updates.description = description;
     if (completed !== undefined) updates.completed = completed;
 
     const updatedTodo = await Todo.findByIdAndUpdate(id, updates, {

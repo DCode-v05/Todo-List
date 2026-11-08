@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose'); // Add mongoose import
+const mongoose = require('mongoose');
 const Todo = require('../models/todoModels');
 
-// GET all tasks
 router.get('/', async (req, res) => {
   try {
     const tasks = await Todo.find();
@@ -13,7 +12,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST a new task
 router.post('/', async (req, res) => {
   try {
     const task = new Todo({
@@ -27,7 +25,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update a task
 router.put('/:id', async (req, res) => {
   try {
     if (!req.params.id || !mongoose.isValidObjectId(req.params.id)) {
@@ -47,7 +44,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE a task
 router.delete('/:id', async (req, res) => {
   try {
     if (!req.params.id || !mongoose.isValidObjectId(req.params.id)) {
